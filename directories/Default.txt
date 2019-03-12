@@ -1,0 +1,6 @@
+# this file specifies the directories that will be loaded automatically when no command line arguments are specified
+# lines starting with # or empty lines will be ignored
+# the paths must be absolute
+
+# this prefix will be prepended to every directory name following this line (should be re-configurable further down)
+# prefix=<put prefix path here>
