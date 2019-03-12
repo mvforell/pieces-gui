@@ -113,7 +113,8 @@ class PiecesPlayer(QWidget):
 	def __init__(self, parent):
 		""" standard constructor: set up class variables, ui elements and layout """
 
-		# TODO: debug
+		# TODO: debug in general
+		# TODO: fix randomly (?) skipping to next movement when either selecting a new one or current one is finished
 		# TODO: add some "whole piece time remaining" indicator
 		# TODO: add option to loop current piece (?)
 		# TODO: take a look at PySide2.QtWidgets.QShortcut (especially for playing/pausing via hotkey while minimized)
@@ -318,9 +319,6 @@ class PiecesPlayer(QWidget):
 	def __event_movement_selected(self):
 		"""	(called when self._listwidget_movements emits itemClicked) (or itemDoubleClicked, see self.__init__ to be sure)
 			skips to the newly selected movement """
-
-		# TODO: fix skipping to next piece when selecting last movement of current piece
-		# (happens at least on my GNU/Linux (Manjaro Linux) netbook
 
 		index = self._listwidget_movements.indexFromItem(self._listwidget_movements.currentItem()).row()
 		if index != self.__get_current_movement_index():  # user selected a movement different from the current one
