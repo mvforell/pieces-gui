@@ -319,6 +319,9 @@ class PiecesPlayer(QWidget):
 		"""	(called when self._listwidget_movements emits itemClicked) (or itemDoubleClicked, see self.__init__ to be sure)
 			skips to the newly selected movement """
 
+		# TODO: fix skipping to next piece when selecting last movement of current piece
+		# (happens at least on my GNU/Linux (Manjaro Linux) netbook
+
 		index = self._listwidget_movements.indexFromItem(self._listwidget_movements.currentItem()).row()
 		if index != self.__get_current_movement_index():  # user selected a movement different from the current one
 			self._current_piece['play_next'] = index

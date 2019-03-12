@@ -26,7 +26,7 @@ def get_pieces_from_sets(sets):
 	for directory in directories:
 		id3 = ''  # ID3-title (piece-specific, not per-movement) of last file ('' if new directory)
 		# (used to decide whether current file is a new piece)
-		for filename in os.listdir(directory):
+		for filename in sorted(os.listdir(directory)):
 			if '.mp3' in filename:  # ignore non-mp3 files
 				audio = EasyID3(os.path.join(directory, filename))
 				n_id3 = audio['title'][0][:audio['title'][0].find(' - ')] if (' - ' in audio['title'][0]) else audio['title'][0]
@@ -36,6 +36,7 @@ def get_pieces_from_sets(sets):
 					id3 = n_id3  # set new ID3-title because we are handling a new piece now
 					pieces[id3] = []  # new piece so we need to create a new empty list that we can append files to
 				pieces[id3].append('"' + os.path.join(directory, filename) + '"')  # quotes needed for windows file name handling
+
 	return pieces
 
 
