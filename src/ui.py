@@ -1,5 +1,5 @@
 from datetime import datetime
-from os import listdir
+from os import listdir, name as os_name
 from random import shuffle
 
 from useful_functions import (
@@ -370,7 +370,10 @@ class PiecesPlayer(QWidget):
 		while self._listwidget_movements.count() > 0:
 			self._listwidget_movements.takeItem(0)
 		files = self._current_piece['files']
-		files = [i[i.rfind('\\') + 3:-4] for i in files]  # remove path to file, title number and .mp3 ending
+		if os_name == 'nt':  # windows paths look different than posix paths
+			files = [i[i.rfind('\\') + 3:-4] for i in files]  # remove path to file, title number and .mp3 ending
+		else:
+			files = [i[i.rfind('/') + 4:-4] for i in files]
 		self._listwidget_movements.addItems(files)
 
 	def __update(self):
