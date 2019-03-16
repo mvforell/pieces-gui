@@ -86,7 +86,7 @@ class HistoryDialog(QDialog):
     """ a simple dialog to let the user view the playing history """
 
     def __init__(self, parent, history_str):
-        """	standard constructor: set up class variables, ui elements and layout
+        """ standard constructor: set up class variables, ui elements and layout
             parameters:
                 - parent: parent widget of this dialog
                 - history_str: str that will be displayed """
@@ -113,7 +113,7 @@ class HistoryDialog(QDialog):
         self.setMinimumHeight(300)
 
     def __action_ok(self):
-        """	(called when self._btn_ok is clicked)
+        """ (called when self._btn_ok is clicked)
             closes this dialog """
 
         self.close()
@@ -324,7 +324,7 @@ class PiecesPlayer(QWidget):
         )
 
     def __action_play_pause(self):
-        """	(gets called when self._btn_play_pause is clicked)
+        """ (gets called when self._btn_play_pause is clicked)
             toggles playing/pausing music and updates everything as needed """
 
         # don't do anything now (maybe end of playlist reached?)
@@ -414,7 +414,7 @@ class PiecesPlayer(QWidget):
         self._lineedit_current_piece.setCursorPosition(0)
 
     def __event_volume_changed(self):
-        """	(called when value of self._slider_volume changes)
+        """ (called when value of self._slider_volume changes)
             updates text of self._lbl_volume to new value of self._slider_value
             and sets icon of self._btn_volume to a fitting one """
 
@@ -462,7 +462,7 @@ class PiecesPlayer(QWidget):
         self._listwidget_movements.addItems(files)
 
     def __update(self):
-        """	(periodically called when self._timer emits timeout signal)
+        """ (periodically called when self._timer emits timeout signal)
             updates various ui elements"""
 
         # -- select currently playing movement in self._listwidget_movements --
