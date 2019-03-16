@@ -71,14 +71,17 @@ class DirectorySetChooseDialog(QDialog):
             loads pieces from selected sets, creates a playlist
             (shuffled if wanted) and calls self._set_pieces_and_playlist """
 
+        selected_sets = self._listwidget_sets.selectedItems()
+        selected_str = 'Currently loaded directory set(s):\n"' + \
+            '", "'.join([s.text() for s in selected_sets]) + '"'
         pieces = get_pieces_from_sets([
-            s.text() + '.txt' for s in self._listwidget_sets.selectedItems()
+            s.text() + '.txt' for s in selected_sets
         ])
         playlist = list(pieces.keys())  # must be a list to be shuffled
         shuffled = self._checkbox_shuffle.isChecked()
         if shuffled:
             shuffle(playlist)
-        self._set_pieces_and_playlist(pieces, playlist, shuffled)
+        self._set_pieces_and_playlist(pieces, playlist, selected_str, shuffled)
         self.close()
 
 
@@ -126,7 +129,6 @@ class PiecesPlayer(QWidget):
         """ standard constructor: set up class variables, ui elements
             and layout """
 
-        # TODO: debug in general
         # TODO: add some "whole piece time remaining" indicator
         # TODO: add option to loop current piece (?)
         # TODO: take a look at PySide2.QtWidgets.QShortcut
@@ -143,6 +145,7 @@ class PiecesPlayer(QWidget):
 
         # -- declare and setup variables for storing information --
         # various data
+        self._set_str = ''  # string of currently loaded directory sets
         self._pieces = {}  # {<piece1>: [<files piece1 consists of>], ...}
         self._playlist = []  # list of keys of self._pieces (determines order)
         self._shuffled = True  # needed for (maybe) reshuffling when looping
@@ -502,13 +505,19 @@ class PiecesPlayer(QWidget):
 
         return self._history
 
-    def set_pieces_and_playlist(self, pieces, playlist, shuffled):
+    def get_set_str(self):
+        """ getter function for parent widget """
+
+        return self._set_str
+
+    def set_pieces_and_playlist(self, pieces, playlist, set_str, shuffled):
         """ needed so that DirectorySetChooseDialog can set our self._pieces
             and self._playlist """
 
         # just to be sure
         if isinstance(pieces, dict) and isinstance(playlist, list):
             self._vlc_mediaplayer.stop()
+            self._set_str = set_str
             self._pieces = pieces
             self._playlist = playlist
             self._shuffled = shuffled
@@ -573,6 +582,11 @@ class PiecesMainWindow(QMainWindow):
         )
         self._menu_file_action_exit_after_current.setCheckable(True)
         self._menu_file.addAction(
+            QIcon(get_icon_path('info')),
+            'Show loaded directory set(s)',
+            self.__action_show_set
+        )
+        self._menu_file.addAction(
             QIcon(get_icon_path('reload')),
             'Load new directory set(s)',
             self.__action_reload_sets
@@ -622,6 +636,18 @@ class PiecesMainWindow(QMainWindow):
             )
         else:
             HistoryDialog(self, make_history_string_from_dict(history)).exec_()
+
+    def __action_show_set(self):
+        """ (gets called when 'show history' menu entry is clicked)
+            shows an QMessageBox.information Dialog containing the playing
+            history """
+
+        sets = self._widget_player.get_set_str()
+        QMessageBox.information(
+            self,
+            'Loaded set(s)',
+            sets
+        )
 
     def __action_exit(self):
         """ (called when menu action "Exit" is clicked)
