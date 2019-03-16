@@ -70,12 +70,17 @@ def get_time_str_from_ms(ms):
 def create_info_str(piece, files):
 	info_str = f'"{piece}"'
 
-	try:  # if artist can be read from original file add it to info_str
+	try:  # if artist can be read from first file add it to info_str
 		info_str += f' by {EasyID3(files[0])["artist"][0]}'
 	except KeyError:  # else just pass
 		pass
 
-	try:  # if length can be read from original file add it to info_str
+	try:  # if album can be read from first file add it to info_str
+		info_str += f' from album "{EasyID3(files[0])["album"][0]}" '
+	except KeyError:  # else just pass
+		pass
+
+	try:  # if length can be read from individual files sum it up and add it to info_str
 		play_time = 0
 		for entry in files:
 			play_time += int(EasyID3(entry)["length"][0])

@@ -12,7 +12,7 @@ from PySide2.QtWidgets import (
 	QMainWindow, QWidget, QDialog, QMessageBox, QGridLayout, QHBoxLayout, QVBoxLayout, QAbstractItemView, QListWidget,
 	QTextEdit, QLineEdit, QSlider, QLabel, QPushButton, QCheckBox
 )
-from vlc import Instance as VLCInstance
+from vlc import Instance as VLCInstance, EventType as VLCEventType
 
 
 class DirectorySetChooseDialog(QDialog):
@@ -138,11 +138,13 @@ class PiecesPlayer(QWidget):
 		self._current_piece = {'title': '', 'files': [], 'play_next': 0}
 		self._default_volume = 100  # in percent from 0 - 100
 		self._volume_before_muted = self._default_volume
+		self._skip_to_next = False  # set to true by self.__event_movement_ended and used by self.__update
 		# vlc-related variables
 		self._vlc_instance = VLCInstance()
 		self._vlc_mediaplayer = self._vlc_instance.media_player_new()
 		self._vlc_mediaplayer.audio_set_volume(self._default_volume)
 		self._vlc_medium = None
+		self._vlc_events = self._vlc_mediaplayer.event_manager()
 
 		# -- create and setup ui elements --
 		# buttons
@@ -212,14 +214,15 @@ class PiecesPlayer(QWidget):
 		# -- various setup --
 		self._timer = QTimer(self)
 		self._timer.timeout.connect(self.__update)
-		self._timer.start(250)  # update every 250ms
+		self._timer.start(125)  # update every 125ms
 		self.setMinimumWidth(800)
 		# get directory set(s) input and set up self._pieces (exec_ means we'll wait for the user input before continuing)
 		DirectorySetChooseDialog(self, self.set_pieces_and_playlist).exec_()
+		self._vlc_events.event_attach(VLCEventType.MediaPlayerEndReached, self.__event_movement_ended)  # automatically skip to next movement / next piece when current one has ended
 
 	def __action_next(self):
 		""" switches to next file in self._current_piece['files'] or to the next piece, if the current piece has ended """
-
+		
 		if self._current_piece['play_next'] == -1:  # current movement is the last of the current piece
 			if len(self._playlist) == 0:  # reached end of playlist
 				if self._btn_loop.isChecked():
@@ -254,9 +257,9 @@ class PiecesPlayer(QWidget):
 				self._history[datetime.now().strftime('%H:%M:%S')] = self._lineedit_current_piece.text()
 		else:
 			self._vlc_medium = self._vlc_instance.media_new(self._current_piece['files'][self._current_piece['play_next']])
-			if self._current_piece['play_next'] == len(self._current_piece['files']) - 1:  # current is last movement
+			if self._current_piece['play_next'] == len(self._current_piece['files']) - 1:  # next is last movement
 				self._current_piece['play_next'] = -1
-			else:  # there is at least one movement of the current piece to be played
+			else:  # there are at least two movements of the current piece to be played
 				self._current_piece['play_next'] += 1
 		self._vlc_medium.parse()
 		self._vlc_mediaplayer.set_media(self._vlc_medium)
@@ -315,6 +318,12 @@ class PiecesPlayer(QWidget):
 		else:  # mute volume
 			self._volume_before_muted = self._slider_volume.value()
 			self._slider_volume.setValue(0)
+
+	def __event_movement_ended(self, event):
+		"""	(called when self._vld_media_player emits a MediaPlayerEndReached event)
+			sets self._skip_to_next to True so the next self.__update call will trigger self.__action_next """
+
+		self._skip_to_next = True
 
 	def __event_movement_selected(self):
 		"""	(called when self._listwidget_movements emits itemClicked) (or itemDoubleClicked, see self.__init__ to be sure)
@@ -398,8 +407,8 @@ class PiecesPlayer(QWidget):
 		if not self._slider_time.isSliderDown():  # don't reset slider to current position if user is dragging it
 			self._slider_time.setValue(self._vlc_mediaplayer.get_position() * 100)
 
-		# -- go to next movement/piece when current movement/piece has ended --
-		if (self._current_piece['files'] != []) and (self._status == 'Playing') and (not self._vlc_mediaplayer.is_playing()):
+		if self._skip_to_next:
+			self._skip_to_next = False
 			self.__action_next()
 
 	def get_history(self):
@@ -445,13 +454,9 @@ class PiecesMainWindow(QMainWindow):
 
 		super(PiecesMainWindow, self).__init__()
 
-		# -- create and setup ui elements --
-		self._widget_player = PiecesPlayer(self)
+		# -- create and setup statusbar elements --
 		self._statuslbl_play_pause = QLabel('Paused')
 		self._statuslbl_playlist_position = QLabel('Position in playlist: 0/?')
-
-		# -- setup layout --
-		self.setCentralWidget(self._widget_player)
 
 		# -- menu and status bar setup --
 		# menu bar
@@ -470,6 +475,8 @@ class PiecesMainWindow(QMainWindow):
 
 		# -- various setup --
 		self.setWindowTitle('Pieces Player')
+		self._widget_player = PiecesPlayer(self)
+		self.setCentralWidget(self._widget_player)
 
 	def __action_reload_sets(self):
 		""" (called when menu action "Load new directory set(s)" is clicked)
