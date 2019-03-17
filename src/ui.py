@@ -598,9 +598,10 @@ class PiecesMainWindow(QMainWindow):
 
         # -- various setup --
         self.setWindowTitle('Pieces Player')
+        self.setMaximumWidth(1200)
+        self.setMaximumHeight(1000)
         self._widget_player = PiecesPlayer(self)
         self.setCentralWidget(self._widget_player)
-        self.closeEvent(self.__event_close)
 
     def __action_reload_sets(self):
         """ (called when menu action "Load new directory set(s)" is clicked)
@@ -648,9 +649,11 @@ class PiecesMainWindow(QMainWindow):
         self._widget_player.exit()
         self.close()
 
-    def __event_close(self, event):
-        """ (called when user closes the window not via the menu action)
-            wrapper function that calls self.__action_exit and accepts the event """
+    def closeEvent(self, event):
+        """ -- override (inherited from QWidget) --
+            (called when user closes the window not via the menu action)
+            wrapper function that calls self.__action_exit and accepts the
+            event """
 
         self.__action_exit()
         event.accept()
