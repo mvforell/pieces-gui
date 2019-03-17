@@ -38,6 +38,7 @@ class DirectorySetChooseDialog(QDialog):
         self._listwidget_sets = QListWidget()
         self._checkbox_shuffle = QCheckBox('Shuffle playlist')
         self._checkbox_shuffle.setChecked(True)  # shuffling enabled by default
+        self._listwidget_sets.itemDoubleClicked.connect(self.__action_choose)
         self._btn_choose = QPushButton('Choose')
         self._btn_choose.clicked.connect(self.__action_choose)
 
@@ -153,13 +154,15 @@ class PiecesPlayer(QWidget):
         self._history = {}
         self._status = 'Paused'
         self._current_piece = {'title': '', 'files': [], 'play_next': 0}
-        self._default_volume = 100  # in percent from 0 - 100
+        self._default_volume = 60  # in percent from 0 - 100
         self._volume_before_muted = self._default_volume
         # set to true by self.__event_movement_ended and used by self.__update
         self._skip_to_next = False
         # vlc-related variables
         self._vlc_instance = VLCInstance()
         self._vlc_mediaplayer = self._vlc_instance.media_player_new()
+        # needed so that VLC actually uses the volume we set after this
+        self._vlc_mediaplayer.audio_set_volume(50)
         self._vlc_mediaplayer.audio_set_volume(self._default_volume)
         self._vlc_medium = None
         self._vlc_events = self._vlc_mediaplayer.event_manager()
@@ -209,20 +212,21 @@ class PiecesPlayer(QWidget):
         )
 
         # -- create layout and insert ui elements--
-        self._layout = QGridLayout(self)
+        self._layout = QVBoxLayout(self)
         # row 0 (name of current piece)
-        self._layout.addWidget(self._lbl_current_piece, 0, 0)
-        self._layout.addWidget(self._lineedit_current_piece, 0, 1, 1, -1)
+        self._layout_piece_name = QHBoxLayout()
+        self._layout_piece_name.addWidget(self._lbl_current_piece)
+        self._layout_piece_name.addWidget(self._lineedit_current_piece)
+        self._layout.addLayout(self._layout_piece_name)
         # rows 1 - 5 (movements of current piece)
-        self._layout.addWidget(self._lbl_movements, 1, 0)
-        self._layout.addWidget(self._listwidget_movements, 2, 0, 4, -1)
+        self._layout.addWidget(self._lbl_movements)
+        self._layout.addWidget(self._listwidget_movements)
         # row 6 (time)
         self._layout_time = QHBoxLayout()
         self._layout_time.addWidget(self._lbl_time_played)
         self._layout_time.addWidget(self._slider_time)
         self._layout_time.addWidget(self._lbl_time_left)
-        self._layout.addLayout(self._layout_time, 6, 0, 1, -1)
-        self._layout.setRowMinimumHeight(6, 65)
+        self._layout.addLayout(self._layout_time)
         # row 7 (buttons and volume)
         self._layout_buttons_and_volume = QHBoxLayout()
         self._layout_buttons_and_volume.addWidget(self._btn_play_pause)
@@ -235,13 +239,14 @@ class PiecesPlayer(QWidget):
         self._layout_buttons_and_volume.addWidget(self._btn_volume)
         self._layout_buttons_and_volume.addWidget(self._slider_volume)
         self._layout_buttons_and_volume.addWidget(self._lbl_volume)
-        self._layout.addLayout(self._layout_buttons_and_volume, 7, 0, 1, -1)
+        self._layout.addLayout(self._layout_buttons_and_volume)
 
         # -- various setup --
         self._timer = QTimer(self)
         self._timer.timeout.connect(self.__update)
         self._timer.start(125)  # update every 125ms
-        self.setMinimumWidth(800)
+        self.setMinimumWidth(850)
+        self.setMinimumHeight(400)
         # get directory set(s) input and set up self._pieces
         # (exec_ means we'll wait for the user input before continuing)
         DirectorySetChooseDialog(self, self.set_pieces_and_playlist).exec_()
@@ -376,7 +381,8 @@ class PiecesPlayer(QWidget):
             self._slider_volume.setValue(0)
 
     def __event_movement_ended(self, event):
-        """ (called when self._vld_media_player emits a MediaPlayerEndReached event)
+        """ (called when self._vlc_media_player emits a MediaPlayerEndReached
+            event)
             sets self._skip_to_next to True so the next self.__update call
             will trigger self.__action_next """
 
@@ -504,7 +510,8 @@ class PiecesPlayer(QWidget):
     def get_set_str(self):
         """ getter function for parent widget """
 
-        return self._set_str
+        return self._set_str if self._set_str != '' \
+            else 'No directory set loaded.'
 
     def set_pieces_and_playlist(self, pieces, playlist, set_str, shuffled):
         """ needed so that DirectorySetChooseDialog can set our self._pieces
@@ -551,8 +558,6 @@ class PiecesMainWindow(QMainWindow):
         """ standard constructor: set up ui elements and layout """
 
         # TODO: add icon (already found some candidates on icons8.com)
-        # TODO: disable maximizing/add maximum width & height?
-        #       (looks pretty awful for big sizes)
 
         super(PiecesMainWindow, self).__init__()
 
@@ -597,9 +602,6 @@ class PiecesMainWindow(QMainWindow):
         self._statuslbl_playlist_position.hide()
 
         # -- various setup --
-        self.setWindowTitle('Pieces Player')
-        self.setMaximumWidth(1200)
-        self.setMaximumHeight(1000)
         self._widget_player = PiecesPlayer(self)
         self.setCentralWidget(self._widget_player)
 
