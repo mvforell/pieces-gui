@@ -4,7 +4,7 @@ from PySide2.QtWidgets import QApplication
 from ui import PiecesMainWindow
 
 
-class MainObject():
+class MainObject:
     def __init__(self):
         self._app = QApplication([])
         # needed for when a KeyboardInterrupt is sent before the constructor of
@@ -16,7 +16,7 @@ class MainObject():
         self._main_window.show()
         sys.exit(self._app.exec_())
 
-    def _handle_keyboard_interrupt(self, signal, frame):
+    def _handle_keyboard_interrupt(self, sig, frame):
         if self._main_window:
             self._main_window.exit()
         else:

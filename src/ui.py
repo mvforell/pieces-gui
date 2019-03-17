@@ -132,10 +132,14 @@ class PiecesPlayer(QWidget):
 
         # TODO: take a look at PySide2.QtWidgets.QShortcut
         #       (especially for playing/pausing via hotkey while minimized)
+        # TODO: fix VLC not actually setting volume before changing after
+        #       starting to play
         # TODO: add option to loop current piece (?)
         # TODO: more documentation
         # TODO: add some "whole piece time remaining" indicator? (complicated)
-        # TODO: implement debug dialog as menu action, if needed
+        # TODO: implement a playlist of pieces that can be edited and enable
+        #       going back to the previous piece (also un- and re-shuffling?)
+        # TODO: implement debug dialog as menu action (if needed)
 
         if not isinstance(parent, PiecesMainWindow):
             raise ValueError('Parent widget must be a PiecesMainWindow')
@@ -161,8 +165,6 @@ class PiecesPlayer(QWidget):
         # vlc-related variables
         self._vlc_instance = VLCInstance()
         self._vlc_mediaplayer = self._vlc_instance.media_player_new()
-        # needed so that VLC actually uses the volume we set after this
-        self._vlc_mediaplayer.audio_set_volume(50)
         self._vlc_mediaplayer.audio_set_volume(self._default_volume)
         self._vlc_medium = None
         self._vlc_events = self._vlc_mediaplayer.event_manager()
@@ -244,8 +246,8 @@ class PiecesPlayer(QWidget):
         # -- various setup --
         self._timer = QTimer(self)
         self._timer.timeout.connect(self.__update)
-        self._timer.start(125)  # update every 125ms
-        self.setMinimumWidth(850)
+        self._timer.start(100)  # update every 100ms
+        self.setMinimumWidth(900)
         self.setMinimumHeight(400)
         # get directory set(s) input and set up self._pieces
         # (exec_ means we'll wait for the user input before continuing)
@@ -557,8 +559,6 @@ class PiecesMainWindow(QMainWindow):
     def __init__(self):
         """ standard constructor: set up ui elements and layout """
 
-        # TODO: add icon (already found some candidates on icons8.com)
-
         super(PiecesMainWindow, self).__init__()
 
         # -- create and setup statusbar elements --
@@ -602,6 +602,8 @@ class PiecesMainWindow(QMainWindow):
         self._statuslbl_playlist_position.hide()
 
         # -- various setup --
+        self.setWindowIcon(QIcon(get_icon_path('music-folder')))
+        self.setWindowTitle('Pieces Player')
         self._widget_player = PiecesPlayer(self)
         self.setCentralWidget(self._widget_player)
 
