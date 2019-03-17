@@ -129,13 +129,11 @@ class PiecesPlayer(QWidget):
         """ standard constructor: set up class variables, ui elements
             and layout """
 
-        # TODO: add some "whole piece time remaining" indicator
-        # TODO: add option to loop current piece (?)
         # TODO: take a look at PySide2.QtWidgets.QShortcut
         #       (especially for playing/pausing via hotkey while minimized)
-        # TODO: own function for setting new VLC medium (release old medium?)
+        # TODO: add option to loop current piece (?)
         # TODO: more documentation
-        # TODO: implement dialog showing currently loaded set(s) as menu action
+        # TODO: add some "whole piece time remaining" indicator? (complicated)
         # TODO: implement debug dialog as menu action, if needed
 
         if not isinstance(parent, PiecesMainWindow):
@@ -290,9 +288,7 @@ class PiecesPlayer(QWidget):
                 # some pieces only have one movement
                 self._current_piece['play_next'] = \
                     1 if len(self._current_piece['files']) > 1 else -1
-                self._vlc_medium = self._vlc_instance.media_new(
-                    self._current_piece['files'][0]
-                )
+                self.__update_vlc_medium(0)
                 self._lineedit_current_piece.setText(
                     create_info_str(
                         self._current_piece['title'],
@@ -303,17 +299,13 @@ class PiecesPlayer(QWidget):
                 self._history[datetime.now().strftime('%H:%M:%S')] = \
                     self._lineedit_current_piece.text()
         else:
-            self._vlc_medium = self._vlc_instance.media_new(
-                self._current_piece['files'][self._current_piece['play_next']]
-            )
+            self.__update_vlc_medium(self._current_piece['play_next'])
             # next is last movement
             if self._current_piece['play_next'] == \
                len(self._current_piece['files']) - 1:
                 self._current_piece['play_next'] = -1
             else:  # there are at least two movements of current piece left
                 self._current_piece['play_next'] += 1
-        self._vlc_medium.parse()
-        self._vlc_mediaplayer.set_media(self._vlc_medium)
         if self._status == 'Paused' and \
            not self.parentWidget().get_pause_after_current():
             self.__action_play_pause()
@@ -370,13 +362,7 @@ class PiecesPlayer(QWidget):
                 # set play_next to current movement
                 self._current_piece['play_next'] -= 1
             self._vlc_mediaplayer.stop()
-            self._vlc_medium = self._vlc_instance.media_new(
-                self._current_piece['files'][
-                    self._current_piece['play_next'] - 1
-                ]
-            )
-            self._vlc_medium.parse()
-            self._vlc_mediaplayer.set_media(self._vlc_medium)
+            self.__update_vlc_medium(self._current_piece['play_next'] - 1)
             self._vlc_mediaplayer.play()
 
     def __action_volume_clicked(self):
@@ -500,6 +486,16 @@ class PiecesPlayer(QWidget):
             self._skip_to_next = False
             self.__action_next()
 
+    def __update_vlc_medium(self, files_index):
+        old_medium = self._vlc_medium
+        self._vlc_medium = self._vlc_instance.media_new(
+            self._current_piece['files'][files_index]
+        )
+        self._vlc_medium.parse()
+        self._vlc_mediaplayer.set_media(self._vlc_medium)
+        if old_medium:  # only release if not None
+            old_medium.release()
+
     def get_history(self):
         """ getter function for parent widget """
 
@@ -535,11 +531,7 @@ class PiecesPlayer(QWidget):
                 )
             )
             self.__update_movement_list()
-            self._vlc_medium = self._vlc_instance.media_new(
-                self._current_piece['files'][0]
-            )
-            self._vlc_medium.parse()
-            self._vlc_mediaplayer.set_media(self._vlc_medium)
+            self.__update_vlc_medium(0)
             self._history[datetime.now().strftime('%H:%M:%S')] = \
                 self._lineedit_current_piece.text()
 
@@ -561,8 +553,6 @@ class PiecesMainWindow(QMainWindow):
         # TODO: add icon (already found some candidates on icons8.com)
         # TODO: disable maximizing/add maximum width & height?
         #       (looks pretty awful for big sizes)
-        # TODO: exit cleanly as well when not using the menu action
-        #       (e.g. by closing the window)
 
         super(PiecesMainWindow, self).__init__()
 
@@ -610,6 +600,7 @@ class PiecesMainWindow(QMainWindow):
         self.setWindowTitle('Pieces Player')
         self._widget_player = PiecesPlayer(self)
         self.setCentralWidget(self._widget_player)
+        self.closeEvent(self.__event_close)
 
     def __action_reload_sets(self):
         """ (called when menu action "Load new directory set(s)" is clicked)
@@ -657,6 +648,13 @@ class PiecesMainWindow(QMainWindow):
         self._widget_player.exit()
         self.close()
 
+    def __event_close(self, event):
+        """ (called when user closes the window not via the menu action)
+            wrapper function that calls self.__action_exit and accepts the event """
+
+        self.__action_exit()
+        event.accept()
+
     def exit(self):
         self.__action_exit()
 
@@ -682,7 +680,9 @@ class PiecesMainWindow(QMainWindow):
 
         self._statuslbl_play_pause.setText(txt_play_pause)
         if txt_playlist_position != '':
-            self._statuslbl_playlist_position.setText(txt_playlist_position)
+            self._statuslbl_playlist_position.setText(
+                'Piece ' + txt_playlist_position
+            )
             self._statuslbl_playlist_position.show()
         else:
             self._statuslbl_playlist_position.hide()
