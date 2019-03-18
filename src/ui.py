@@ -448,6 +448,8 @@ class PiecesPlayer(QWidget):
         """ removes all items currently in self._listwidget_movements and adds
             everything in self._current_piece['files] """
 
+        # TODO: use ID3 title instead of filename
+
         while self._listwidget_movements.count() > 0:
             self._listwidget_movements.takeItem(0)
         files = self._current_piece['files']
