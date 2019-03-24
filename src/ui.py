@@ -132,6 +132,8 @@ class PiecesPlayer(QWidget):
 
         # TODO: take a look at PySide2.QtWidgets.QShortcut
         #       (especially for playing/pausing via hotkey while minimized)
+        # TODO: fix pausing after skipping to next movement when pause after
+        #       current is checked
         # TODO: fix VLC not actually setting volume before changing after
         #       starting to play
         # TODO: add option to loop current piece (?)
