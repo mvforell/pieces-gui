@@ -4,7 +4,7 @@ from random import shuffle
 
 
 from PySide2.QtCore import Qt, QTimer
-from PySide2.QtGui import QIcon
+from PySide2.QtGui import QIcon, QKeySequence
 from PySide2.QtWidgets import (
     QMainWindow, QWidget, QDialog, QMessageBox, QGridLayout, QHBoxLayout,
     QVBoxLayout, QAbstractItemView, QListWidget, QTextEdit, QLineEdit, QSlider,
@@ -130,12 +130,10 @@ class PiecesPlayer(QWidget):
         """ standard constructor: set up class variables, ui elements
             and layout """
 
-        # TODO: take a look at PySide2.QtWidgets.QShortcut
-        #       (especially for playing/pausing via hotkey while minimized)
-        # TODO: fix pausing after skipping to next movement when pause after
-        #       current is checked
-        # TODO: fix VLC not actually setting volume before changing after
+        # TODO: implement global hotkey for toggling play/pause while minimized
         #       starting to play
+        # TODO: make time changeable by clicking next to the slider (not only
+        #        by dragging the slider)
         # TODO: add option to loop current piece (?)
         # TODO: more documentation
         # TODO: add some "whole piece time remaining" indicator? (complicated)
@@ -262,6 +260,8 @@ class PiecesPlayer(QWidget):
         """ switches to next file in self._current_piece['files']
             or to the next piece, if the current piece has ended """
 
+        reset_pause_after_current = False
+
         # current movement is last of the current piece
         if self._current_piece['play_next'] == -1:
             if len(self._playlist) == 0:  # reached end of playlist
@@ -287,6 +287,7 @@ class PiecesPlayer(QWidget):
                     self.parentWidget().exit()
                 if self.parentWidget().get_pause_after_current():
                     self.__action_play_pause()
+                    reset_pause_after_current = True
                     # reset of the menu action will be at the end of this
                     # function, or else we won't stay paused
 
@@ -315,10 +316,9 @@ class PiecesPlayer(QWidget):
                 self._current_piece['play_next'] = -1
             else:  # there are at least two movements of current piece left
                 self._current_piece['play_next'] += 1
-        if self._status == 'Paused' and \
-           not self.parentWidget().get_pause_after_current():
+        if self._status == 'Paused' and not reset_pause_after_current:
             self.__action_play_pause()
-        elif self.parentWidget().get_pause_after_current():
+        elif reset_pause_after_current:
             self.parentWidget().set_pause_after_current(False)
         else:
             self._vlc_mediaplayer.play()
@@ -494,8 +494,11 @@ class PiecesPlayer(QWidget):
         # -- update value of self._slider_time --
         # don't reset slider to current position if user is dragging it
         if not self._slider_time.isSliderDown():
-            self._slider_time.setValue(self._vlc_mediaplayer.get_position()
-                                       * 100)
+            try:
+                self._slider_time.setValue(self._vlc_mediaplayer.get_position()
+                                           * 100)
+            except OSError:  # don't know why that occurs sometimes
+                pass
 
         if self._skip_to_next:
             self._skip_to_next = False
@@ -556,10 +559,10 @@ class PiecesPlayer(QWidget):
 
         try:  # don't know why that occurs sometimes
             self._vlc_mediaplayer.stop()
+            self._vlc_mediaplayer.release()
+            self._vlc_instance.release()
         except OSError:
             pass
-        self._vlc_mediaplayer.release()
-        self._vlc_instance.release()
 
 
 class PiecesMainWindow(QMainWindow):
@@ -578,31 +581,41 @@ class PiecesMainWindow(QMainWindow):
         # -- menu and status bar setup --
         # menu bar
         self._menu_file = self.menuBar().addMenu('File')
-        self._menu_file.addAction(
-            'Pause after current piece'
-        ).setCheckable(True)
-        self._menu_file.addAction(
-            'Exit after current piece'
-        ).setCheckable(True)
+        self._menu_file_action_pause_after_current = self._menu_file.addAction(
+            'Pause after current piece',
+            None,  # "called" when clicked, needed for complying with signature
+            QKeySequence('Ctrl+P')
+        )
+        self._menu_file_action_pause_after_current.setCheckable(True)
+        self._menu_file_action_exit_after_current = self._menu_file.addAction(
+            'Exit after current piece',
+            None,  # "called" when clicked, needed for complying with signature
+            QKeySequence('Ctrl+E')
+        )
+        self._menu_file_action_pause_after_current.setCheckable(True)
         self._menu_file.addAction(
             QIcon(get_icon_path('info')),
             'Show loaded directory set(s)',
-            self.__action_show_set
+            self.__action_show_set,
+            QKeySequence('Ctrl+D')
         )
         self._menu_file.addAction(
             QIcon(get_icon_path('reload')),
             'Load new directory set(s)',
-            self.__action_reload_sets
+            self.__action_reload_sets,
+            QKeySequence('Ctrl+L')
         )
         self._menu_file.addAction(
             QIcon(get_icon_path('history')),
             'Show history',
-            self.__action_show_history
+            self.__action_show_history,
+            QKeySequence('Ctrl+H')
         )
         self._menu_file.addAction(
             QIcon(get_icon_path('exit')),
             'Exit',
-            self.__action_exit
+            self.__action_exit,
+            QKeySequence('Ctrl+W')
         )
         # status bar
         self.statusBar().addPermanentWidget(self._statuslbl_play_pause)
