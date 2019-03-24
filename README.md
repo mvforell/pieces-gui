@@ -2,7 +2,7 @@
 A simple classical music player with a GUI using Qt for Python.
 
 ## Requirements
-Tested on python 3.7, also see `requirements.txt`.
+Tested on Python 3.7, also see `requirements.txt`.
 
 ## Installation and Setup
 (I recommend setting up a virtual environment for python)
