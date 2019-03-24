@@ -475,18 +475,21 @@ class PiecesPlayer(QWidget):
         # -- update text of self._lbl_time_played and self._lbl_time_left,
         # if necessary --
         if self._vlc_medium:
-            time_played = self._vlc_mediaplayer.get_time()
-            medium_duration = self._vlc_medium.get_duration()
-            # other values don't make sense (but do occur)
-            if (time_played >= 0) and (time_played <= medium_duration):
-                self._lbl_time_played.setText(
-                    get_time_str_from_ms(time_played)
+            try:
+                time_played = self._vlc_mediaplayer.get_time()
+                medium_duration = self._vlc_medium.get_duration()
+                # other values don't make sense (but do occur)
+                if (time_played >= 0) and (time_played <= medium_duration):
+                    self._lbl_time_played.setText(
+                        get_time_str_from_ms(time_played)
+                    )
+                else:
+                    self._lbl_time_played.setText(get_time_str_from_ms(0))
+                self._lbl_time_left.setText(
+                    f'-{get_time_str_from_ms(medium_duration - time_played)}'
                 )
-            else:
-                self._lbl_time_played.setText(get_time_str_from_ms(0))
-            self._lbl_time_left.setText(
-                f'-{get_time_str_from_ms(medium_duration - time_played)}'
-            )
+            except OSError:  # don't know why that occurs sometimes
+                pass
 
         # -- update value of self._slider_time --
         # don't reset slider to current position if user is dragging it
@@ -551,7 +554,10 @@ class PiecesPlayer(QWidget):
     def exit(self):
         """ exits cleanly """
 
-        self._vlc_mediaplayer.stop()
+        try:  # don't know why that occurs sometimes
+            self._vlc_mediaplayer.stop()
+        except OSError:
+            pass
         self._vlc_mediaplayer.release()
         self._vlc_instance.release()
 
@@ -572,14 +578,12 @@ class PiecesMainWindow(QMainWindow):
         # -- menu and status bar setup --
         # menu bar
         self._menu_file = self.menuBar().addMenu('File')
-        self._menu_file_action_pause_after_current = self._menu_file.addAction(
+        self._menu_file.addAction(
             'Pause after current piece'
-        )
-        self._menu_file_action_pause_after_current.setCheckable(True)
-        self._menu_file_action_exit_after_current = self._menu_file.addAction(
+        ).setCheckable(True)
+        self._menu_file.addAction(
             'Exit after current piece'
-        )
-        self._menu_file_action_exit_after_current.setCheckable(True)
+        ).setCheckable(True)
         self._menu_file.addAction(
             QIcon(get_icon_path('info')),
             'Show loaded directory set(s)',
