@@ -3,12 +3,13 @@ from os import listdir, name as os_name
 from random import shuffle
 
 
+from pynput import keyboard
 from PySide2.QtCore import Qt, QTimer
 from PySide2.QtGui import QIcon, QKeySequence
 from PySide2.QtWidgets import (
     QMainWindow, QWidget, QDialog, QMessageBox, QGridLayout, QHBoxLayout,
     QVBoxLayout, QAbstractItemView, QListWidget, QTextEdit, QLineEdit, QSlider,
-    QLabel, QPushButton, QCheckBox
+    QLabel, QPushButton, QCheckBox, QShortcut
 )
 from vlc import Instance as VLCInstance, EventType as VLCEventType
 
@@ -130,10 +131,8 @@ class PiecesPlayer(QWidget):
         """ standard constructor: set up class variables, ui elements
             and layout """
 
-        # TODO: implement global hotkey for toggling play/pause while minimized
-        #       starting to play
         # TODO: make time changeable by clicking next to the slider (not only
-        #        by dragging the slider)
+        #       by dragging the slider)
         # TODO: add option to loop current piece (?)
         # TODO: more documentation
         # TODO: add some "whole piece time remaining" indicator? (complicated)
@@ -242,6 +241,14 @@ class PiecesPlayer(QWidget):
         self._layout_buttons_and_volume.addWidget(self._slider_volume)
         self._layout_buttons_and_volume.addWidget(self._lbl_volume)
         self._layout.addLayout(self._layout_buttons_and_volume)
+
+        # -- setup hotkeys --
+        self._KEY_CODES_PLAY_PAUSE = [179]
+        self._KEY_CODES_NEXT = [176]
+        self._KEY_CODES_PREVIOUS = [177]
+        self._keyboard_listener = keyboard.Listener(on_press=self.__on_press)
+        self._keyboard_listener.start()
+        QShortcut(QKeySequence('Space'), self, self.__action_play_pause)
 
         # -- various setup --
         self._timer = QTimer(self)
@@ -446,6 +453,22 @@ class PiecesPlayer(QWidget):
         else:
             return play_next - 1
 
+    def __on_press(self, key):
+        """ (called by self._keyboard_listener when a key is pressed)
+            looks up key code corresponding to key and calls the appropriate
+            action function """
+
+        try:  # key is not always of the same type (why would it be?!)
+            key_code = key.vk
+        except AttributeError:
+            key_code = key.value.vk
+        if key_code in self._KEY_CODES_PLAY_PAUSE:
+            self.__action_play_pause()
+        elif key_code in self._KEY_CODES_NEXT:
+            self.__action_next()
+        elif key_code in self._KEY_CODES_PREVIOUS:
+            self.__action_previous()
+
     def __update_movement_list(self):
         """ removes all items currently in self._listwidget_movements and adds
             everything in self._current_piece['files] """
@@ -564,6 +587,8 @@ class PiecesPlayer(QWidget):
         except OSError:
             pass
 
+        self._keyboard_listener.stop()
+
 
 class PiecesMainWindow(QMainWindow):
     """ main window of this application, wrapping a menu and status bar around
@@ -592,7 +617,7 @@ class PiecesMainWindow(QMainWindow):
             None,  # "called" when clicked, needed for complying with signature
             QKeySequence('Ctrl+E')
         )
-        self._menu_file_action_pause_after_current.setCheckable(True)
+        self._menu_file_action_exit_after_current.setCheckable(True)
         self._menu_file.addAction(
             QIcon(get_icon_path('info')),
             'Show loaded directory set(s)',

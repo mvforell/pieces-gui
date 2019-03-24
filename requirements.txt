@@ -1,3 +1,4 @@
 PySide2
 python-vlc
 mutagen
+pynput
