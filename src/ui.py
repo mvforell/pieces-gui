@@ -133,6 +133,7 @@ class PiecesPlayer(QWidget):
 
         # TODO: make time changeable by clicking next to the slider (not only
         #       by dragging the slider)
+        # TODO: add "about" action to open info dialog in new "help" menu
         # TODO: add option to loop current piece (?)
         # TODO: more documentation
         # TODO: add some "whole piece time remaining" indicator? (complicated)
