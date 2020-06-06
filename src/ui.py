@@ -363,11 +363,17 @@ class PiecesPlayer(QWidget):
         """ (called when self._btn_previous ist clicked)
             goes back one movement of the current piece, if possible
             (cannot go back to previous piece) """
+<<<<<<< HEAD
 
         # TODO: fix IndexError when called for empty playlist
 
         # can't go back to previous piece, but current one has one movement
         if len(self._current_piece['files']) == 1:
+=======
+        
+        # can't go back to previous piece, but current one has no or one movement
+        if len(self._current_piece['files']) <= 1:
+>>>>>>> 8c333a8267294f07a337fea412946b19c3b9ce75
             pass
         # currently playing first movement, so nothing to do as well
         elif self._current_piece['play_next'] == 1:
