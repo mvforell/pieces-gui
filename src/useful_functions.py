@@ -32,8 +32,12 @@ def get_pieces_from_sets(sets):
         for filename in sorted(os.listdir(directory)):
             if '.mp3' in filename:  # ignore non-mp3 files
                 audio = EasyID3(os.path.join(directory, filename))
-                n_id3 = audio['title'][0][:audio['title'][0].find(' - ')] if \
-                    (' - ' in audio['title'][0]) else audio['title'][0]
+                try:
+                    id3_text = audio['title'][0]
+                except KeyError:
+                    print(os.path.join(directory, filename) + ' does not have a TIT2 ID3 tag')
+                    continue
+                n_id3 = id3_text[:id3_text.find(' - ')] if (' - ' in id3_text) else id3_text
                 # ID3-title of current file
                 n_id3 = n_id3.strip()  # remove any spaces at beginning/end
                 if n_id3 != id3:  # seems to be a new piece
