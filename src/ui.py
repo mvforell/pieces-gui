@@ -1,6 +1,10 @@
 from datetime import datetime
-from os import listdir, name as os_name
+from os import add_dll_directory, listdir, name as os_name
 from random import shuffle
+
+
+if os_name == 'nt':
+    add_dll_directory(r'C:\Program Files\VideoLAN\VLC')
 
 
 from pynput import keyboard
