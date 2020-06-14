@@ -27,4 +27,4 @@ instructions at https://pynput.readthedocs.io/en/latest/limitations.html#mac-osx
 ## License and copyright
 For license information please refer to the `LICENSE` file.
 
-Copyright (c) 2019 Max von Forell
+Copyright (c) 2020 Max von Forell

@@ -135,6 +135,7 @@ class PiecesPlayer(QWidget):
         """ standard constructor: set up class variables, ui elements
             and layout """
 
+        # TODO: split current piece info into separate lineedits for title, album name and length
         # TODO: make time changeable by clicking next to the slider (not only
         #       by dragging the slider)
         # TODO: add "about" action to open info dialog in new "help" menu
@@ -248,9 +249,9 @@ class PiecesPlayer(QWidget):
         self._layout.addLayout(self._layout_buttons_and_volume)
 
         # -- setup hotkeys --
-        self._KEY_CODES_PLAY_PAUSE = [179]
-        self._KEY_CODES_NEXT = [176]
-        self._KEY_CODES_PREVIOUS = [177]
+        self._KEY_CODES_PLAY_PAUSE = [269025044]
+        self._KEY_CODES_NEXT = [269025047]
+        self._KEY_CODES_PREVIOUS = [269025046]
         self._keyboard_listener = keyboard.Listener(on_press=self.__on_press)
         self._keyboard_listener.start()
         QShortcut(QKeySequence('Space'), self, self.__action_play_pause)
@@ -366,7 +367,7 @@ class PiecesPlayer(QWidget):
         """ (called when self._btn_previous ist clicked)
             goes back one movement of the current piece, if possible
             (cannot go back to previous piece) """
-        
+
         # can't go back to previous piece, but current one has no or one movement
         if len(self._current_piece['files']) <= 1:
             pass
@@ -610,38 +611,38 @@ class PiecesMainWindow(QMainWindow):
 
         # -- menu and status bar setup --
         # menu bar
-        self._menu_file = self.menuBar().addMenu('File')
-        self._menu_file_action_pause_after_current = self._menu_file.addAction(
+        self._menu_options = self.menuBar().addMenu('Options')
+        self._menu_options_action_pause_after_current = self._menu_options.addAction(
             'Pause after current piece',
             None,  # "called" when clicked, needed for complying with signature
             QKeySequence('Ctrl+P')
         )
-        self._menu_file_action_pause_after_current.setCheckable(True)
-        self._menu_file_action_exit_after_current = self._menu_file.addAction(
+        self._menu_options_action_pause_after_current.setCheckable(True)
+        self._menu_options_action_exit_after_current = self._menu_options.addAction(
             'Exit after current piece',
             None,  # "called" when clicked, needed for complying with signature
             QKeySequence('Ctrl+E')
         )
-        self._menu_file_action_exit_after_current.setCheckable(True)
-        self._menu_file.addAction(
+        self._menu_options_action_exit_after_current.setCheckable(True)
+        self._menu_options.addAction(
             QIcon(get_icon_path('info')),
             'Show loaded directory set(s)',
             self.__action_show_set,
             QKeySequence('Ctrl+D')
         )
-        self._menu_file.addAction(
+        self._menu_options.addAction(
             QIcon(get_icon_path('reload')),
             'Load new directory set(s)',
             self.__action_reload_sets,
             QKeySequence('Ctrl+L')
         )
-        self._menu_file.addAction(
+        self._menu_options.addAction(
             QIcon(get_icon_path('history')),
             'Show history',
             self.__action_show_history,
             QKeySequence('Ctrl+H')
         )
-        self._menu_file.addAction(
+        self._menu_options.addAction(
             QIcon(get_icon_path('exit')),
             'Exit',
             self.__action_exit,
@@ -719,17 +720,17 @@ class PiecesMainWindow(QMainWindow):
     def get_pause_after_current(self):
         """ getter function for self._widget_player """
 
-        return self._menu_file_action_pause_after_current.isChecked()
+        return self._menu_options_action_pause_after_current.isChecked()
 
     def set_pause_after_current(self, bool_val):
         """ setter function for self._widget_player """
 
-        self._menu_file_action_pause_after_current.setChecked(bool_val)
+        self._menu_options_action_pause_after_current.setChecked(bool_val)
 
     def get_exit_after_current(self):
         """ getter function for self._widget_player """
 
-        return self._menu_file_action_exit_after_current.isChecked()
+        return self._menu_options_action_exit_after_current.isChecked()
 
     def update_status_bar(self, txt_play_pause, txt_playlist_position):
         """ (called by self._widget_player)
